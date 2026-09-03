@@ -6,8 +6,10 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      // Saat backend (folder /api) sudah dijalankan, aktifkan proxy ini
-      // '/api': 'http://localhost:4000'
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true
+      }
     }
   }
 })
