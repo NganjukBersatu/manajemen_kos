@@ -1,14 +1,15 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import NavIcon from './NavIcon.vue'
 
-defineProps({
-  open: { type: Boolean, default: false }
+const props = defineProps({
+  collapsed: { type: Boolean, default: false }
 })
-const emit = defineEmits(['close'])
+const emit = defineEmits(['toggle'])
 
 const route = useRoute()
+const router = useRouter()
 const tagihanTerbuka = ref(route.path.startsWith('/tagihan'))
 
 const menuUtama = [
@@ -32,53 +33,97 @@ const menuBawah = [
 ]
 
 const isTagihanActive = computed(() => route.path.startsWith('/tagihan'))
+
+function klikTagihan() {
+  if (props.collapsed) {
+    emit('toggle')
+    tagihanTerbuka.value = true
+  } else {
+    tagihanTerbuka.value = !tagihanTerbuka.value
+  }
+}
+
+function logout() {
+  if (!confirm('Yakin ingin keluar?')) return
+  localStorage.removeItem('kos_user')
+  router.push('/login')
+}
 </script>
 
 <template>
-  <!-- Overlay untuk mobile -->
-  <div
-    v-if="open"
-    class="fixed inset-0 bg-black/30 z-30 lg:hidden"
-    @click="emit('close')"
-  />
-
   <aside
-    class="fixed inset-y-0 left-0 z-40 w-64 bg-brand-600 text-brand-50 flex flex-col transition-transform duration-200 lg:translate-x-0 lg:static lg:z-0"
-    :class="open ? 'translate-x-0' : '-translate-x-full'"
+    class="fixed top-0 left-0 h-screen z-40 bg-brand-600 text-brand-50 flex flex-col transition-all duration-200"
+    :class="collapsed ? 'w-20' : 'w-64'"
   >
-    <div class="flex items-center gap-2.5 px-5 h-16 border-b border-white/10 shrink-0">
-      <div class="w-8 h-8 rounded-md bg-gold-500 flex items-center justify-center text-brand-700 font-bold text-sm">
-        K
+    <!-- Header sidebar: logo + tombol toggle -->
+    <div
+      class="flex items-center h-16 border-b border-white/10 shrink-0"
+      :class="collapsed ? 'justify-center px-2' : 'justify-between px-4'"
+    >
+      <div class="flex items-center gap-2.5 min-w-0">
+        <div class="w-8 h-8 rounded-md bg-gold-500 flex items-center justify-center text-brand-700 font-bold text-sm shrink-0">
+          K
+        </div>
+        <span v-if="!collapsed" class="font-semibold text-[15px] tracking-tight text-white truncate">
+          Kelola Kos
+        </span>
       </div>
-      <span class="font-semibold text-[15px] tracking-tight text-white">Kelola Kos</span>
+
+      <button
+        v-if="!collapsed"
+        type="button"
+        class="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-white/10 text-brand-100/80 hover:text-white shrink-0"
+        aria-label="Tutup sidebar"
+        @click="emit('toggle')"
+      >
+        <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4">
+          <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+    <!-- Tombol buka, muncul saat collapsed -->
+    <button
+      v-if="collapsed"
+      type="button"
+      class="mx-auto mt-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 text-brand-100/80 hover:text-white"
+      aria-label="Buka sidebar"
+      @click="emit('toggle')"
+    >
+      <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4">
+        <path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </button>
+
+    <nav class="flex-1 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-0.5">
       <router-link
         v-for="item in menuUtama"
         :key="item.to"
         :to="item.to"
         class="nav-item"
+        :class="collapsed ? 'justify-center px-0' : ''"
         active-class="nav-item-active"
         exact-active-class="nav-item-active"
-        @click="emit('close')"
+        :title="collapsed ? item.label : ''"
       >
         <NavIcon :name="item.icon" />
-        <span>{{ item.label }}</span>
+        <span v-if="!collapsed">{{ item.label }}</span>
       </router-link>
 
       <!-- Tagihan (punya submenu) -->
       <button
         type="button"
-        class="nav-item w-full justify-between"
-        :class="isTagihanActive ? 'nav-item-active' : ''"
-        @click="tagihanTerbuka = !tagihanTerbuka"
+        class="nav-item"
+        :class="[collapsed ? 'justify-center px-0' : 'w-full justify-between', isTagihanActive ? 'nav-item-active' : '']"
+        :title="collapsed ? 'Tagihan' : ''"
+        @click="klikTagihan"
       >
         <span class="flex items-center gap-3">
           <NavIcon name="file" />
-          <span>Tagihan</span>
+          <span v-if="!collapsed">Tagihan</span>
         </span>
         <svg
+          v-if="!collapsed"
           class="w-3.5 h-3.5 transition-transform"
           :class="tagihanTerbuka ? 'rotate-180' : ''"
           viewBox="0 0 12 12" fill="none"
@@ -87,14 +132,13 @@ const isTagihanActive = computed(() => route.path.startsWith('/tagihan'))
         </svg>
       </button>
 
-      <div v-show="tagihanTerbuka" class="ml-4 pl-3 border-l border-white/10 space-y-0.5 py-0.5">
+      <div v-show="tagihanTerbuka && !collapsed" class="ml-4 pl-3 border-l border-white/10 space-y-0.5 py-0.5">
         <router-link
           v-for="item in tagihanSub"
           :key="item.to"
           :to="item.to"
           class="nav-item text-[13.5px] py-2"
           active-class="nav-item-active"
-          @click="emit('close')"
         >
           <NavIcon :name="item.icon" small />
           <span>{{ item.label }}</span>
@@ -108,18 +152,25 @@ const isTagihanActive = computed(() => route.path.startsWith('/tagihan'))
         :key="item.to"
         :to="item.to"
         class="nav-item"
+        :class="collapsed ? 'justify-center px-0' : ''"
         active-class="nav-item-active"
-        @click="emit('close')"
+        :title="collapsed ? item.label : ''"
       >
         <NavIcon :name="item.icon" />
-        <span>{{ item.label }}</span>
+        <span v-if="!collapsed">{{ item.label }}</span>
       </router-link>
     </nav>
 
     <div class="px-3 py-4 border-t border-white/10">
-      <button type="button" class="nav-item text-brand-100/80 hover:text-white w-full">
+      <button
+        type="button"
+        class="nav-item text-brand-100/80 hover:text-white w-full"
+        :class="collapsed ? 'justify-center px-0' : ''"
+        :title="collapsed ? 'Keluar' : ''"
+        @click="logout"
+      >
         <NavIcon name="logout" />
-        <span>Keluar</span>
+        <span v-if="!collapsed">Keluar</span>
       </button>
     </div>
   </aside>

@@ -3,6 +3,12 @@ import DashboardLayout from '../layouts/DashboardLayout.vue'
 
 const routes = [
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: 'Login', public: true }
+  },
+  {
     path: '/',
     component: DashboardLayout,
     children: [
@@ -26,6 +32,18 @@ const router = createRouter({
   routes,
   scrollBehavior() {
     return { top: 0 }
+  }
+})
+
+router.beforeEach((to, from, next) => {
+  const isLoggedIn = !!localStorage.getItem('kos_user')
+
+  if (!to.meta.public && !isLoggedIn) {
+    next('/login')
+  } else if (to.path === '/login' && isLoggedIn) {
+    next('/')
+  } else {
+    next()
   }
 })
 

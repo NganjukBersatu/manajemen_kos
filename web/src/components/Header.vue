@@ -4,8 +4,6 @@ import { useRoute } from 'vue-router'
 import NavIcon from './NavIcon.vue'
 import { pemilik } from '../data/dummy.js'
 
-defineProps({})
-const emit = defineEmits(['toggle-sidebar'])
 const route = useRoute()
 
 const periode = ref('September 2026')
@@ -13,16 +11,12 @@ const periode = ref('September 2026')
 
 <template>
   <header class="sticky top-0 z-20 bg-cream/90 backdrop-blur border-b border-ink-100 h-16 flex items-center gap-4 px-4 lg:px-8">
-    <button
-      type="button"
-      class="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-ink-100 text-ink-700"
-      @click="emit('toggle-sidebar')"
-      aria-label="Buka menu"
-    >
+    <!-- Dekorasi saja, bukan tombol -->
+    <span class="w-9 h-9 flex items-center justify-center rounded-lg text-ink-700 shrink-0" aria-hidden="true">
       <svg viewBox="0 0 24 24" fill="none" class="w-5 h-5">
         <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
       </svg>
-    </button>
+    </span>
 
     <div class="flex-1 min-w-0">
       <h1 class="text-[17px] font-semibold text-ink-900 leading-tight truncate">
