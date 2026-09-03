@@ -7,12 +7,12 @@ const router = Router()
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT p.id, p.nama, p.no_hp, p.tanggal_masuk, p.tanggal_keluar,
-              p.harga_sewa, p.status, k.nomor_kamar
-       FROM penghuni p
-       JOIN kamar k ON k.id = p.kamar_id
-       ORDER BY p.created_at DESC`
-    )
+  `SELECT p.id, p.kamar_id, p.nama, p.no_hp, p.tanggal_masuk, p.tanggal_keluar,
+          p.harga_sewa, p.status, k.nomor_kamar
+   FROM penghuni p
+   JOIN kamar k ON k.id = p.kamar_id
+   ORDER BY p.created_at DESC`
+)
     res.json({ data: result.rows })
   } catch (err) {
     console.error(err)
