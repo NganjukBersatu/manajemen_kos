@@ -24,6 +24,14 @@ const statusTone = {
   selesai: 'bg-ok-100 text-ok-600'
 }
 
+// Urutan tahapan untuk stepper progress
+const tahapan = ['masuk', 'diproses', 'diperbaiki', 'selesai']
+
+function indexTahapan(status) {
+  const idx = tahapan.indexOf(status)
+  return idx === -1 ? 0 : idx
+}
+
 async function muatLaporan() {
   loading.value = true
   try {
@@ -70,6 +78,11 @@ async function kirimLaporan() {
 function formatTanggal(t) {
   if (!t) return '-'
   return new Date(t).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function rupiah(n) {
+  if (!n || Number(n) === 0) return null
+  return 'Rp' + Number(n).toLocaleString('id-ID')
 }
 
 onMounted(muatLaporan)
@@ -144,11 +157,11 @@ onMounted(muatLaporan)
         :key="item.id"
         class="bg-white rounded-xl border border-ink-100 p-4 shadow-card"
       >
-        <div class="flex items-start justify-between gap-3">
+        <div class="flex items-start justify-between gap-3 mb-3">
           <div>
             <p class="font-medium text-ink-900">{{ item.masalah }}</p>
             <p v-if="item.catatan" class="text-[13px] text-ink-500 mt-0.5">{{ item.catatan }}</p>
-            <p class="text-[12px] text-ink-400 mt-1">{{ formatTanggal(item.tanggal_laporan) }}</p>
+            <p class="text-[12px] text-ink-400 mt-1">Dilaporkan {{ formatTanggal(item.tanggal_laporan) }}</p>
           </div>
           <span
             class="shrink-0 inline-block px-2 py-1 rounded-md text-[11.5px] font-semibold"
@@ -156,6 +169,31 @@ onMounted(muatLaporan)
           >
             {{ statusLabel[item.status] || item.status }}
           </span>
+        </div>
+
+        <!-- Progress stepper -->
+        <div v-if="item.status !== 'selesai' || true" class="flex items-center gap-1 mt-3">
+          <template v-for="(tahap, i) in tahapan" :key="tahap">
+            <div
+              class="h-1.5 flex-1 rounded-full"
+              :class="i <= indexTahapan(item.status) ? 'bg-brand-500' : 'bg-ink-100'"
+            />
+          </template>
+        </div>
+        <div class="flex justify-between text-[10.5px] text-ink-400 mt-1">
+          <span
+            v-for="tahap in tahapan"
+            :key="tahap"
+            :class="tahap === item.status ? 'font-semibold text-brand-500' : ''"
+          >
+            {{ statusLabel[tahap] }}
+          </span>
+        </div>
+
+        <!-- Biaya, kalau sudah diisi pemilik -->
+        <div v-if="rupiah(item.biaya)" class="mt-3 pt-3 border-t border-ink-100 flex items-center justify-between">
+          <p class="text-[12.5px] text-ink-500">Biaya perbaikan</p>
+          <p class="text-[13.5px] font-semibold text-ink-900">{{ rupiah(item.biaya) }}</p>
         </div>
       </div>
     </div>

@@ -134,14 +134,20 @@ router.post('/', async (req, res) => {
       [kamar_id, periode, DEFAULT_TARIF_LISTRIK, jatuh_tempo]
     )
 
-    // 6. Tagihan INTERNET (paket default)
+    // 6. Tagihan INTERNET (paket default) — internet terhubung ke kos, bukan kamar
+    const kosResult = await client.query(
+      `SELECT kos_id FROM kamar WHERE id = $1`,
+      [kamar_id]
+    )
+    const kos_id = kosResult.rows[0]?.kos_id
+
     await client.query(
       `INSERT INTO tagihan_internet 
-         (kamar_id, periode, provider, paket, tagihan, jatuh_tempo, status)
+         (kos_id, periode, provider, paket, tagihan, jatuh_tempo, status)
        VALUES ($1, $2, $3, $4, $5, $6, 'belum_dibayar')
        ON CONFLICT DO NOTHING`,
       [
-        kamar_id,
+        kos_id,
         periode,
         DEFAULT_INTERNET.provider,
         DEFAULT_INTERNET.paket,

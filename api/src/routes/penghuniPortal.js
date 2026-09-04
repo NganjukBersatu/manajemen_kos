@@ -62,11 +62,14 @@ router.get('/tagihan', authPenghuni, async (req, res) => {
          FROM tagihan_air WHERE kamar_id = $1 ORDER BY periode DESC`,
         [kamarId]
       ),
-      pool.query(
-        `SELECT id, periode, total, jatuh_tempo, status, 'internet' as jenis
-         FROM tagihan_internet WHERE kamar_id = $1 ORDER BY periode DESC`,
-        [kamarId]
-      )
+        pool.query(
+    `SELECT ti.id, ti.periode, ti.tagihan as total, ti.jatuh_tempo, ti.status, 'internet' as jenis
+     FROM tagihan_internet ti
+     JOIN kamar k ON k.kos_id = ti.kos_id
+     WHERE k.id = $1
+     ORDER BY ti.periode DESC`,
+    [kamarId]
+  )
     ])
 
     const semua = [
