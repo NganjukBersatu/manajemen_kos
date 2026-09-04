@@ -1,9 +1,12 @@
 <script setup>
 import NavIcon from './NavIcon.vue'
-import { perluPerhatian } from '../data/dummy.js'
+
+const props = defineProps({
+  data: { type: Object, required: true }
+})
 
 function rupiah(n) {
-  return 'Rp' + n.toLocaleString('id-ID')
+  return 'Rp' + Number(n).toLocaleString('id-ID')
 }
 </script>
 
@@ -17,14 +20,13 @@ function rupiah(n) {
     </div>
 
     <div class="space-y-3">
-      <!-- Pembayaran belum lunas -->
       <div class="flex items-start justify-between gap-3 rounded-lg border border-danger-100 bg-danger-100/40 p-3">
         <div>
           <p class="text-[13.5px] font-semibold text-ink-900">
-            {{ perluPerhatian.pembayaranBelumLunas.jumlah }} pembayaran belum lunas
+            {{ data.pembayaranBelumLunas.jumlah }} pembayaran belum lunas
           </p>
           <p class="text-[12.5px] text-ink-500 mt-0.5">
-            {{ rupiah(perluPerhatian.pembayaranBelumLunas.total) }} belum diterima
+            {{ rupiah(data.pembayaranBelumLunas.total) }} belum diterima
           </p>
         </div>
         <router-link to="/pembayaran" class="text-[12.5px] font-semibold text-brand-500 hover:text-brand-600 shrink-0 mt-0.5">
@@ -32,31 +34,29 @@ function rupiah(n) {
         </router-link>
       </div>
 
-      <!-- Kamar perlu perbaikan -->
-      <div class="rounded-lg border border-warn-100 bg-warn-100/40 p-3">
+      <div v-if="data.kamarPerluPerbaikan.length" class="rounded-lg border border-warn-100 bg-warn-100/40 p-3">
         <div class="flex items-start justify-between gap-3">
           <p class="text-[13.5px] font-semibold text-ink-900">
-            {{ perluPerhatian.kamarPerluPerbaikan.length }} kamar membutuhkan perbaikan
+            {{ data.kamarPerluPerbaikan.length }} kamar membutuhkan perbaikan
           </p>
           <router-link to="/maintenance" class="text-[12.5px] font-semibold text-brand-500 hover:text-brand-600 shrink-0">
             Lihat
           </router-link>
         </div>
         <ul class="mt-1.5 space-y-0.5">
-          <li v-for="k in perluPerhatian.kamarPerluPerbaikan" :key="k.kamar" class="text-[12.5px] text-ink-500">
+          <li v-for="k in data.kamarPerluPerbaikan" :key="k.kamar" class="text-[12.5px] text-ink-500">
             <span class="font-medium text-ink-700">{{ k.kamar }}</span> — {{ k.masalah }}
           </li>
         </ul>
       </div>
 
-      <!-- Kontrak akan berakhir -->
       <div class="flex items-start justify-between gap-3 rounded-lg border border-ink-100 bg-ink-100/40 p-3">
         <div>
           <p class="text-[13.5px] font-semibold text-ink-900">
-            {{ perluPerhatian.kontrakAkanBerakhir.jumlah }} kontrak akan berakhir
+            {{ data.kontrakAkanBerakhir.jumlah }} kontrak akan berakhir
           </p>
           <p class="text-[12.5px] text-ink-500 mt-0.5">
-            Dalam {{ perluPerhatian.kontrakAkanBerakhir.dalamHari }} hari
+            Dalam {{ data.kontrakAkanBerakhir.dalamHari }} hari
           </p>
         </div>
         <router-link to="/penghuni" class="text-[12.5px] font-semibold text-brand-500 hover:text-brand-600 shrink-0 mt-0.5">

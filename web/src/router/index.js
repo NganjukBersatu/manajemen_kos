@@ -2,12 +2,15 @@ import { createRouter, createWebHistory } from 'vue-router'
 import DashboardLayout from '../layouts/DashboardLayout.vue'
 
 const routes = [
+  // ========== LOGIN PEMILIK ==========
   {
     path: '/login',
     name: 'login',
     component: () => import('../views/Login.vue'),
     meta: { title: 'Login', public: true }
   },
+
+  // ========== DASHBOARD PEMILIK ==========
   {
     path: '/',
     component: DashboardLayout,
@@ -23,6 +26,34 @@ const routes = [
       { path: 'maintenance', name: 'maintenance', component: () => import('../views/Maintenance.vue'), meta: { title: 'Maintenance' } },
       { path: 'laporan', name: 'laporan', component: () => import('../views/Laporan.vue'), meta: { title: 'Laporan' } },
       { path: 'pengaturan', name: 'pengaturan', component: () => import('../views/Pengaturan.vue'), meta: { title: 'Pengaturan' } }
+    ],
+    meta: { requiresPemilik: true }
+  },
+
+  // ========== PORTAL PENGHUNI ==========
+  {
+    path: '/penghuni',
+    component: () => import('../layouts/PenghuniLayout.vue'),
+    meta: { requiresPenghuni: true },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'penghuni-dashboard',
+        component: () => import('../views/penghuni/DashboardPenghuni.vue'),
+        meta: { title: 'Dashboard Penghuni' }
+      },
+      {
+        path: 'tagihan',
+        name: 'penghuni-tagihan',
+        component: () => import('../views/penghuni/TagihanPenghuni.vue'),
+        meta: { title: 'Tagihan Saya' }
+      },
+      {
+        path: 'lapor',
+        name: 'penghuni-lapor',
+        component: () => import('../views/penghuni/LaporMasalah.vue'),
+        meta: { title: 'Lapor Masalah' }
+      }
     ]
   }
 ]
@@ -36,15 +67,32 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
-  const isLoggedIn = !!localStorage.getItem('kos_user')
+  const isPemilikLoggedIn = !!localStorage.getItem('kos_user')
+  const isPenghuniLoggedIn = !!localStorage.getItem('penghuni_token')
 
-  if (!to.meta.public && !isLoggedIn) {
-    next('/login')
-  } else if (to.path === '/login' && isLoggedIn) {
-    next('/')
-  } else {
-    next()
+  // Halaman public (login)
+  if (to.meta.public) {
+    // Kalau sudah login pemilik & buka /login → redirect ke dashboard pemilik
+    if (to.path === '/login' && isPemilikLoggedIn) {
+      return next('/')
+    }
+    return next()
   }
+
+  // Route khusus portal penghuni
+  if (to.matched.some((record) => record.meta.requiresPenghuni)) {
+    if (!isPenghuniLoggedIn) {
+      return next('/login')
+    }
+    return next()
+  }
+
+  // Route pemilik (default)
+  if (!isPemilikLoggedIn) {
+    return next('/login')
+  }
+
+  next()
 })
 
 export default router

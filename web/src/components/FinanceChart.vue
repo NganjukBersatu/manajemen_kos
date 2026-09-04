@@ -1,6 +1,9 @@
 <script setup>
 import { computed } from 'vue'
-import { grafikKeuangan } from '../data/dummy.js'
+
+const props = defineProps({
+  data: { type: Object, required: true }
+})
 
 const W = 560
 const H = 200
@@ -10,11 +13,12 @@ const PAD_T = 12
 const PAD_B = 24
 
 const maxVal = computed(() =>
-  Math.max(...grafikKeuangan.pendapatan, ...grafikKeuangan.pengeluaran) * 1.1
+  Math.max(...props.data.pendapatan, ...props.data.pengeluaran, 1) * 1.1
 )
 
 function points(series) {
   const n = series.length
+  if (n < 2) return ''
   const usableW = W - PAD_L - PAD_R
   const usableH = H - PAD_T - PAD_B
   return series
@@ -26,16 +30,17 @@ function points(series) {
     .join(' ')
 }
 
-const pendapatanPts = computed(() => points(grafikKeuangan.pendapatan))
-const pengeluaranPts = computed(() => points(grafikKeuangan.pengeluaran))
+const pendapatanPts = computed(() => points(props.data.pendapatan))
+const pengeluaranPts = computed(() => points(props.data.pengeluaran))
 
 const keuntunganBulanIni = computed(() => {
-  const n = grafikKeuangan.pendapatan.length - 1
-  return grafikKeuangan.pendapatan[n] - grafikKeuangan.pengeluaran[n]
+  const n = props.data.pendapatan.length - 1
+  if (n < 0) return 0
+  return props.data.pendapatan[n] - props.data.pengeluaran[n]
 })
 
 function rupiahSingkat(n) {
-  if (n >= 1000000) return 'Rp' + (n / 1000000).toFixed(1).replace('.0', '') + 'jt'
+  if (Math.abs(n) >= 1000000) return 'Rp' + (n / 1000000).toFixed(1).replace('.0', '') + 'jt'
   return 'Rp' + n.toLocaleString('id-ID')
 }
 </script>
@@ -57,7 +62,10 @@ function rupiahSingkat(n) {
       </div>
     </div>
 
-    <p class="text-[12.5px] text-ok-600 font-medium mb-2">
+    <p
+      class="text-[12.5px] font-medium mb-2"
+      :class="keuntunganBulanIni >= 0 ? 'text-ok-600' : 'text-danger-600'"
+    >
       Keuntungan bulan ini {{ rupiahSingkat(keuntunganBulanIni) }}
     </p>
 
@@ -73,9 +81,9 @@ function rupiahSingkat(n) {
       <polyline :points="pengeluaranPts" fill="none" stroke="#D9A448" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
       <polyline :points="pendapatanPts" fill="none" stroke="#1F5F5B" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round" />
 
-      <g v-for="(bulan, i) in grafikKeuangan.bulan" :key="bulan">
+      <g v-for="(bulan, i) in data.bulan" :key="bulan + i">
         <text
-          :x="PAD_L + ((W - PAD_L - PAD_R) * i) / (grafikKeuangan.bulan.length - 1)"
+          :x="PAD_L + ((W - PAD_L - PAD_R) * i) / (data.bulan.length - 1)"
           :y="H - 4"
           text-anchor="middle"
           font-size="10.5"

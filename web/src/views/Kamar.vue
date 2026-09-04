@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import NavIcon from '../components/NavIcon.vue'
 import StatusBadge from '../components/StatusBadge.vue'
 import KamarFormModal from '../components/KamarFormModal.vue'
@@ -13,6 +13,22 @@ const editingKamar = ref(null)
 const saving = ref(false)
 
 const deletingId = ref(null)
+
+const searchQuery = ref('')
+
+const kamarTersaring = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return daftarKamar.value
+
+  return daftarKamar.value.filter((kamar) => {
+    return (
+      kamar.nomor_kamar?.toLowerCase().includes(q) ||
+      kamar.status?.toLowerCase().includes(q) ||
+      kamar.fasilitas?.toLowerCase().includes(q) ||
+      kamar.nama_penghuni?.toLowerCase().includes(q)
+    )
+  })
+})
 
 function rupiah(n) {
   return 'Rp' + Number(n).toLocaleString('id-ID')
@@ -85,20 +101,36 @@ onMounted(muatKamar)
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-5">
-      <p class="text-[13.5px] text-ink-500">
-        {{ daftarKamar.length }} kamar terdaftar
+    <div class="flex items-center justify-between gap-3 mb-5">
+      <p class="text-[13.5px] text-ink-500 whitespace-nowrap">
+        {{ kamarTersaring.length }} dari {{ daftarKamar.length }} kamar
       </p>
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-brand-600"
-        @click="bukaTambah"
-      >
-        <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4">
-          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        Tambah Kamar
-      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+            <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari nomor kamar, penghuni, status..."
+            class="w-64 rounded-lg border border-ink-100 pl-9 pr-3 py-2.5 text-[13.5px] text-ink-900 focus:border-brand-400 focus:outline-none"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-brand-600 whitespace-nowrap"
+          @click="bukaTambah"
+        >
+          <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Tambah Kamar
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -117,7 +149,7 @@ onMounted(muatKamar)
       </button>
     </div>
 
-    <!-- Empty -->
+    <!-- Empty: belum ada kamar sama sekali -->
     <div v-else-if="daftarKamar.length === 0" class="bg-white rounded-card border border-ink-100 shadow-card p-10 text-center max-w-md mx-auto mt-6">
       <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-4">
         <NavIcon name="door" :size="22" />
@@ -126,6 +158,18 @@ onMounted(muatKamar)
       <p class="text-[13px] text-ink-500 mt-1.5">Tambahkan kamar pertama untuk mulai mengelola kos kamu.</p>
       <button type="button" class="mt-4 text-[13px] font-semibold text-brand-500 hover:text-brand-600" @click="bukaTambah">
         + Tambah Kamar
+      </button>
+    </div>
+
+    <!-- Empty: ada kamar tapi tidak ada yang cocok dengan pencarian -->
+    <div v-else-if="kamarTersaring.length === 0" class="bg-white rounded-card border border-ink-100 shadow-card p-10 text-center max-w-md mx-auto mt-6">
+      <div class="w-12 h-12 rounded-xl bg-ink-100 text-ink-500 flex items-center justify-center mx-auto mb-4">
+        <NavIcon name="alert" :size="22" />
+      </div>
+      <p class="text-[14px] font-semibold text-ink-900">Tidak ada kamar yang cocok</p>
+      <p class="text-[13px] text-ink-500 mt-1.5">Coba kata kunci lain, atau hapus pencarian.</p>
+      <button type="button" class="mt-4 text-[13px] font-semibold text-brand-500 hover:text-brand-600" @click="searchQuery = ''">
+        Hapus pencarian
       </button>
     </div>
 
@@ -144,7 +188,7 @@ onMounted(muatKamar)
         </thead>
         <tbody>
           <tr
-            v-for="kamar in daftarKamar"
+            v-for="kamar in kamarTersaring"
             :key="kamar.id"
             class="border-b border-ink-100 last:border-0 hover:bg-ink-50/40"
           >

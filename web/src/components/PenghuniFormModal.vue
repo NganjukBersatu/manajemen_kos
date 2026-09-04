@@ -18,7 +18,9 @@ const form = reactive({
   tanggal_masuk: '',
   tanggal_keluar: '',
   harga_sewa: '',
-  status: 'aktif'
+  status: 'aktif',
+  username: '',
+  password: ''
 })
 
 async function muatKamar() {
@@ -42,6 +44,8 @@ watch(
       form.tanggal_keluar = props.editing?.tanggal_keluar?.slice(0, 10) || ''
       form.harga_sewa = props.editing?.harga_sewa || ''
       form.status = props.editing?.status || 'aktif'
+      form.username = props.editing?.username || ''
+      form.password = '' // selalu kosong saat buka form, isi hanya jika mau ganti password
       muatKamar()
     }
   }
@@ -49,12 +53,22 @@ watch(
 
 function handleSubmit() {
   if (!form.nama || !form.kamar_id || !form.tanggal_masuk || !form.harga_sewa) return
-  emit('submit', {
+  // Saat tambah penghuni baru, username & password wajib diisi
+  if (!props.editing && (!form.username || !form.password)) return
+
+  const payload = {
     ...form,
     kamar_id: Number(form.kamar_id),
     harga_sewa: Number(form.harga_sewa),
     tanggal_keluar: form.tanggal_keluar || null
-  })
+  }
+
+  // Saat edit, jangan kirim field password kalau dikosongkan (biar password lama tidak ketimpa kosong)
+  if (props.editing && !form.password) {
+    delete payload.password
+  }
+
+  emit('submit', payload)
 }
 </script>
 
@@ -151,6 +165,37 @@ function handleSubmit() {
             <option value="aktif">Aktif</option>
             <option value="nonaktif">Nonaktif</option>
           </select>
+        </div>
+
+        <div class="pt-2 border-t border-ink-100">
+          <p class="text-[12.5px] font-semibold text-ink-500 uppercase tracking-wide mb-3 mt-3">
+            Akun Login Penghuni
+          </p>
+        </div>
+
+        <div>
+          <label class="block text-[13px] font-medium text-ink-700 mb-1.5">Username</label>
+          <input
+            v-model="form.username"
+            type="text"
+            placeholder="username untuk login"
+            :required="!editing"
+            class="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-[13.5px] text-ink-900 focus:border-brand-400 focus:outline-none"
+          />
+        </div>
+
+        <div>
+          <label class="block text-[13px] font-medium text-ink-700 mb-1.5">
+            Password
+            <span v-if="editing" class="text-ink-400 font-normal">(kosongkan jika tidak diubah)</span>
+          </label>
+          <input
+            v-model="form.password"
+            type="password"
+            placeholder="Password login"
+            :required="!editing"
+            class="w-full rounded-lg border border-ink-100 px-3 py-2.5 text-[13.5px] text-ink-900 focus:border-brand-400 focus:outline-none"
+          />
         </div>
 
         <div class="flex gap-3 pt-2">

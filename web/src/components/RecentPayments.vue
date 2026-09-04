@@ -1,8 +1,10 @@
 <script setup>
-import { pembayaranTerbaru } from '../data/dummy.js'
+defineProps({
+  items: { type: Array, required: true }
+})
 
 function rupiah(n) {
-  return 'Rp' + n.toLocaleString('id-ID')
+  return 'Rp' + Number(n).toLocaleString('id-ID')
 }
 
 const statusStyle = {
@@ -21,7 +23,11 @@ const statusStyle = {
       </router-link>
     </div>
 
-    <div class="overflow-x-auto -mx-1">
+    <p v-if="items.length === 0" class="text-[13px] text-ink-500 py-4 text-center">
+      Belum ada data pembayaran.
+    </p>
+
+    <div v-else class="overflow-x-auto -mx-1">
       <table class="w-full text-[13.5px] min-w-[420px]">
         <thead>
           <tr class="text-left text-ink-500 text-[12px] border-b border-ink-100">
@@ -33,7 +39,7 @@ const statusStyle = {
         </thead>
         <tbody>
           <tr
-            v-for="p in pembayaranTerbaru"
+            v-for="p in items"
             :key="p.penghuni + p.kamar"
             class="border-b border-ink-100 last:border-0"
           >
