@@ -1,20 +1,23 @@
 <script setup>
 import { computed } from 'vue'
-import { statusKamar } from '../data/dummy.js'
 
-const total = statusKamar.terisi + statusKamar.kosong + statusKamar.maintenance
+const props = defineProps({
+  data: { type: Object, required: true }
+})
+
+const total = computed(() => props.data.terisi + props.data.kosong + props.data.maintenance)
 
 const segments = computed(() => {
   const items = [
-    { label: 'Terisi', value: statusKamar.terisi, color: '#1F5F5B' },
-    { label: 'Kosong', value: statusKamar.kosong, color: '#D9A448' },
-    { label: 'Maintenance', value: statusKamar.maintenance, color: '#B44B3D' }
+    { label: 'Terisi', value: props.data.terisi, color: '#1F5F5B' },
+    { label: 'Kosong', value: props.data.kosong, color: '#D9A448' },
+    { label: 'Maintenance', value: props.data.maintenance, color: '#B44B3D' }
   ]
   const r = 15.9155
   const circumference = 2 * Math.PI * r
   let offset = 0
   return items.map((it) => {
-    const fraction = it.value / total
+    const fraction = total.value > 0 ? it.value / total.value : 0
     const dash = fraction * circumference
     const seg = { ...it, dash, gap: circumference - dash, offset: -offset, circumference }
     offset += dash

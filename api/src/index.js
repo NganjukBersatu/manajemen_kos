@@ -14,6 +14,8 @@ import pengeluaranRoutes from './routes/pengeluaran.js'
 import maintenanceRoutes from './routes/maintenance.js'
 import laporanRoutes from './routes/laporan.js'
 import authRoutes from './routes/auth.js'
+import penghuniAuthRoutes from './routes/penghuniAuth.js'
+import penghuniPortalRoutes from './routes/penghuniPortal.js'
 
 const app = express()
 const PORT = process.env.PORT || 4000
@@ -36,6 +38,8 @@ app.use('/api/tagihan/internet', tagihanInternetRoutes)
 app.use('/api/pengeluaran', pengeluaranRoutes)
 app.use('/api/maintenance', maintenanceRoutes)
 app.use('/api/laporan', laporanRoutes)
+app.use('/api/penghuni', penghuniAuthRoutes)
+app.use('/api/penghuni-portal', penghuniPortalRoutes)
 
 app.listen(PORT, async () => {
   console.log(`Kos Manager API berjalan di http://localhost:${PORT}`)

@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import NavIcon from '../components/NavIcon.vue'
 import PenghuniFormModal from '../components/PenghuniFormModal.vue'
 
@@ -11,6 +11,23 @@ const modalOpen = ref(false)
 const editingPenghuni = ref(null)
 const saving = ref(false)
 const deletingId = ref(null)
+
+const searchQuery = ref('')
+
+const penghuniTersaring = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return daftarPenghuni.value
+
+  return daftarPenghuni.value.filter((p) => {
+    return (
+      p.nama?.toLowerCase().includes(q) ||
+      p.no_hp?.toLowerCase().includes(q) ||
+      p.nomor_kamar?.toLowerCase().includes(q) ||
+      p.username?.toLowerCase().includes(q) ||
+      (p.status === 'aktif' ? 'aktif' : 'nonaktif').includes(q)
+    )
+  })
+})
 
 function rupiah(n) {
   return 'Rp' + Number(n).toLocaleString('id-ID')
@@ -58,12 +75,17 @@ async function simpanPenghuni(form) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form)
     })
-    if (!res.ok) throw new Error('Gagal menyimpan penghuni')
+
+    const json = await res.json().catch(() => ({}))
+
+    if (!res.ok) {
+      throw new Error(json.message || 'Gagal menyimpan penghuni')
+    }
 
     modalOpen.value = false
     await muatPenghuni()
   } catch (err) {
-    alert('Gagal menyimpan penghuni. Coba lagi.')
+    alert(err.message || 'Gagal menyimpan penghuni. Coba lagi.')
   } finally {
     saving.value = false
   }
@@ -74,10 +96,11 @@ async function hapusPenghuni(p) {
   deletingId.value = p.id
   try {
     const res = await fetch(`/api/penghuni/${p.id}`, { method: 'DELETE' })
-    if (!res.ok) throw new Error('Gagal menghapus penghuni')
+    const json = await res.json().catch(() => ({}))
+    if (!res.ok) throw new Error(json.message || 'Gagal menghapus penghuni')
     await muatPenghuni()
   } catch (err) {
-    alert('Gagal menghapus penghuni. Coba lagi.')
+    alert(err.message || 'Gagal menghapus penghuni. Coba lagi.')
   } finally {
     deletingId.value = null
   }
@@ -88,20 +111,36 @@ onMounted(muatPenghuni)
 
 <template>
   <div>
-    <div class="flex items-center justify-between mb-5">
-      <p class="text-[13.5px] text-ink-500">
-        {{ daftarPenghuni.length }} penghuni terdaftar
+    <div class="flex items-center justify-between gap-3 mb-5 flex-wrap">
+      <p class="text-[13.5px] text-ink-500 whitespace-nowrap">
+        {{ penghuniTersaring.length }} dari {{ daftarPenghuni.length }} penghuni
       </p>
-      <button
-        type="button"
-        class="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-brand-600"
-        @click="bukaTambah"
-      >
-        <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4">
-          <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-        </svg>
-        Tambah Penghuni
-      </button>
+
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-ink-400">
+            <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.8" />
+            <path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Cari nama, No. HP, kamar..."
+            class="w-64 rounded-lg border border-ink-100 pl-9 pr-3 py-2.5 text-[13.5px] text-ink-900 focus:border-brand-400 focus:outline-none"
+          />
+        </div>
+
+        <button
+          type="button"
+          class="flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-[13.5px] font-semibold text-white hover:bg-brand-600 whitespace-nowrap"
+          @click="bukaTambah"
+        >
+          <svg viewBox="0 0 24 24" fill="none" class="w-4 h-4">
+            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Tambah Penghuni
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
@@ -120,7 +159,7 @@ onMounted(muatPenghuni)
       </button>
     </div>
 
-    <!-- Empty -->
+    <!-- Empty: belum ada penghuni sama sekali -->
     <div v-else-if="daftarPenghuni.length === 0" class="bg-white rounded-card border border-ink-100 shadow-card p-10 text-center max-w-md mx-auto mt-6">
       <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-500 flex items-center justify-center mx-auto mb-4">
         <NavIcon name="users" :size="22" />
@@ -132,6 +171,18 @@ onMounted(muatPenghuni)
       </button>
     </div>
 
+    <!-- Empty: tidak ada hasil pencarian -->
+    <div v-else-if="penghuniTersaring.length === 0" class="bg-white rounded-card border border-ink-100 shadow-card p-10 text-center max-w-md mx-auto mt-6">
+      <div class="w-12 h-12 rounded-xl bg-ink-100 text-ink-500 flex items-center justify-center mx-auto mb-4">
+        <NavIcon name="alert" :size="22" />
+      </div>
+      <p class="text-[14px] font-semibold text-ink-900">Tidak ada penghuni yang cocok</p>
+      <p class="text-[13px] text-ink-500 mt-1.5">Coba kata kunci lain, atau hapus pencarian.</p>
+      <button type="button" class="mt-4 text-[13px] font-semibold text-brand-500 hover:text-brand-600" @click="searchQuery = ''">
+        Hapus pencarian
+      </button>
+    </div>
+
     <!-- Tabel penghuni -->
     <div v-else class="bg-white rounded-card border border-ink-100 shadow-card overflow-hidden">
       <table class="w-full text-left">
@@ -140,6 +191,7 @@ onMounted(muatPenghuni)
             <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">Nama</th>
             <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">No. HP</th>
             <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">Kamar</th>
+            <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">Username</th>
             <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">Tgl Masuk</th>
             <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">Tgl Keluar</th>
             <th class="px-4 py-3 text-[12.5px] font-semibold text-ink-500">Harga Sewa</th>
@@ -149,13 +201,14 @@ onMounted(muatPenghuni)
         </thead>
         <tbody>
           <tr
-            v-for="p in daftarPenghuni"
+            v-for="p in penghuniTersaring"
             :key="p.id"
             class="border-b border-ink-100 last:border-0 hover:bg-ink-50/40"
           >
             <td class="px-4 py-3 text-[13.5px] font-bold text-ink-900">{{ p.nama }}</td>
             <td class="px-4 py-3 text-[13px] text-ink-700">{{ p.no_hp || '-' }}</td>
             <td class="px-4 py-3 text-[13px] text-ink-700">{{ p.nomor_kamar || '-' }}</td>
+            <td class="px-4 py-3 text-[13px] text-ink-700">{{ p.username || '-' }}</td>
             <td class="px-4 py-3 text-[12.5px] text-ink-500">{{ tanggal(p.tanggal_masuk) }}</td>
             <td class="px-4 py-3 text-[12.5px] text-ink-500">{{ tanggal(p.tanggal_keluar) }}</td>
             <td class="px-4 py-3 text-[13px] text-ink-700">{{ rupiah(p.harga_sewa) }}</td>
